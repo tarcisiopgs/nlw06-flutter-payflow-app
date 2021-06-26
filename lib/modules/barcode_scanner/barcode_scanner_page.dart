@@ -1,10 +1,10 @@
 import 'package:payflow/modules/barcode_scanner/barcode_scanner_controller.dart';
 import 'package:payflow/modules/barcode_scanner/barcode_scanner_status.dart';
 import 'package:payflow/shared/widgets/buttons/set_label_buttons.dart';
+import 'package:payflow/shared/widgets/custom_bottom_sheet.dart';
 import 'package:payflow/shared/themes/app_text_styles.dart';
 import 'package:payflow/shared/themes/app_colors.dart';
 import 'package:flutter/material.dart';
-import 'package:payflow/shared/widgets/custom_bottom_sheet.dart';
 
 class BarcodeScannerPage extends StatefulWidget {
   const BarcodeScannerPage({Key? key}) : super(key: key);
@@ -19,7 +19,11 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
   @override
   void initState() {
     barcodeScannerController.getAvailableCameras();
-
+    barcodeScannerController.statusNotifier.addListener(() {
+      if (barcodeScannerController.status.hasBarcode) {
+        Navigator.pushReplacementNamed(context, '/insert_boleto');
+      }
+    });
     super.initState();
   }
 
@@ -31,14 +35,6 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
 
   @override
   Widget build(BuildContext context) {
-    // return CustomBottomSheet(
-    //     primaryLabel: 'Escanear novamente',
-    //     secondaryLabel: 'Digitar código',
-    //     primaryOnPressed: () {},
-    //     secondaryOnPressed: () {},
-    //     title: 'Não foi possível identificar um código de barras.',
-    //     subtitle: 'Tente escanear novamente ou digite o código do seu boleto.');
-
     return SafeArea(
       child: Stack(
         children: [
@@ -104,7 +100,26 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
                 secondaryOnPressed: () {},
               ),
             ),
-          )
+          ),
+          ValueListenableBuilder<BarcodeScannerStatus>(
+              valueListenable: barcodeScannerController.statusNotifier,
+              builder: (_, status, __) {
+                if (status.hasError) {
+                  return CustomBottomSheet(
+                      primaryLabel: 'Escanear novamente',
+                      secondaryLabel: 'Digitar código',
+                      primaryOnPressed: () {
+                        barcodeScannerController.getAvailableCameras();
+                      },
+                      secondaryOnPressed: () {},
+                      title:
+                          'Não foi possível identificar um código de barras.',
+                      subtitle:
+                          'Tente escanear novamente ou digite o código do seu boleto.');
+                } else {
+                  return Container();
+                }
+              }),
         ],
       ),
     );
